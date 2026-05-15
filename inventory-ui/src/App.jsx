@@ -1,122 +1,131 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
-import './App.css'
+import { useState, useEffect } from 'react';
+import './App.css';
+
+const API_URL = 'http://localhost:5054/api/items';
 
 function App() {
-  const [count, setCount] = useState(0)
+  const [items, setItems] = useState([]);
+  const [form, setForm] = useState({ name: '', sku: '', quantity: '' });
+  const [error, setError] = useState('');
+
+  const fetchItems = async () => {
+    try {
+      const res = await fetch(API_URL);
+      const data = await res.json();
+      setItems(data);
+    } catch {
+      setError('Failed to connect to API. Make sure the backend is running.');
+    }
+  };
+
+  useEffect(() => {
+    fetchItems();
+  }, []);
+
+  const handleChange = (e) => {
+    setForm({ ...form, [e.target.name]: e.target.value });
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError('');
+
+    if (!form.name.trim() || !form.sku.trim() || form.quantity === '') {
+      setError('All fields are required.');
+      return;
+    }
+
+    const quantity = parseInt(form.quantity, 10);
+    if (isNaN(quantity) || quantity < 0) {
+      setError('Quantity must be a non-negative number.');
+      return;
+    }
+
+    try {
+      const res = await fetch(API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: form.name.trim(), sku: form.sku.trim(), quantity }),
+      });
+
+      if (!res.ok) {
+        setError('Failed to add item.');
+        return;
+      }
+
+      setForm({ name: '', sku: '', quantity: '' });
+      fetchItems();
+    } catch {
+      setError('Failed to connect to API.');
+    }
+  };
+
+  const getStatusBadge = (status) => {
+    const cls = status === 'In Stock' ? 'badge-in' : status === 'Low Stock' ? 'badge-low' : 'badge-out';
+    return <span className={`badge ${cls}`}>{status}</span>;
+  };
 
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.jsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
+    <div className="container">
+      <h1>Inventory Items Manager</h1>
 
-      <div className="ticks"></div>
-
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
+      <form className="add-form" onSubmit={handleSubmit}>
+        <h2>Add New Item</h2>
+        <div className="form-row">
+          <input
+            type="text"
+            name="name"
+            placeholder="Item Name"
+            value={form.name}
+            onChange={handleChange}
+          />
+          <input
+            type="text"
+            name="sku"
+            placeholder="SKU"
+            value={form.sku}
+            onChange={handleChange}
+          />
+          <input
+            type="number"
+            name="quantity"
+            placeholder="Quantity"
+            min="0"
+            value={form.quantity}
+            onChange={handleChange}
+          />
+          <button type="submit">Add Item</button>
         </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
+        {error && <p className="error">{error}</p>}
+      </form>
 
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
-  )
+      <h2>Inventory List</h2>
+      {items.length === 0 ? (
+        <p className="empty">No items yet. Add one above!</p>
+      ) : (
+        <table>
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>SKU</th>
+              <th>Quantity</th>
+              <th>Stock Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {items.map((item) => (
+              <tr key={item.id}>
+                <td>{item.name}</td>
+                <td>{item.sku}</td>
+                <td>{item.quantity}</td>
+                <td>{getStatusBadge(item.stockStatus)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+    </div>
+  );
 }
 
-export default App
+export default App;

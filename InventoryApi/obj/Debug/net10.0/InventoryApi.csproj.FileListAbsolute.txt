@@ -31,3 +31,4 @@ D:\assignment\InventoryApi\obj\Debug\net10.0\refint\InventoryApi.dll
 D:\assignment\InventoryApi\obj\Debug\net10.0\InventoryApi.pdb
 D:\assignment\InventoryApi\obj\Debug\net10.0\InventoryApi.genruntimeconfig.cache
 D:\assignment\InventoryApi\obj\Debug\net10.0\ref\InventoryApi.dll
+D:\assignment\InventoryApi\obj\Debug\net10.0\InventoryApi.sourcelink.json
